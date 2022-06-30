@@ -115,6 +115,18 @@ La asistencia proyectada se calcula así:
     Para un vivo de instagram es la centésima parte de la cantidad de seguidores dividido la duración esperada
 */
 
+esFamosa(Banda):-
+    hace(Banda,Presentacion),
+    asistenciaProyectada(Presentacion,Cant),
+    Cant >= 987.
+
+asistenciaProyectada(   propio(Capacidad),                     Capacidad).
+
+asistenciaProyectada(   masivo(_, CantBandas, _),              Asistencia) :-
+    is(Asistencia, 1000 * CantBandas).
+
+asistenciaProyectada(   vivoIG(_, DuracionEstimada, Followers),  Asistencia) :-
+    is(Asistencia, Followers / 100 / DuracionEstimada).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -139,3 +151,55 @@ Hacer el predicado bandaCarita/1, que se cumple para aquella banda con la presen
 - Los show propios cuestan 1 moneda por cada lugar disponible.
 - Los vivos de instagram cuestan 1 moneda por hora por cada 200 seguidores.
 */
+
+nacionalidad(eli,brasil). %etc.
+
+seguroVa(Persona, masivo(_, _, Pais) ) :-
+    nacionalidad(Pais, Persona).
+
+seguroVa(_, vivoIG(_, DuracionEstimada, _) ) :-
+    DuracionEstimada < 3.
+
+
+% Punto 3)
+
+% Estos son iguales en cualquiera de las tres versiones:
+costo(masivo(_,CantBandas,_), Costo):-
+    Costo is CantBandas * 500.
+costo(propio(Capacidad), Capacidad).
+costo(vivoIG(_,Horas,Seguidores), Costo):-
+    Costo is Horas * Seguidores / 200.
+
+%%%%%%%%%%%%%%%%%%%
+
+% Estrategia: La banda hace una presentación, y todas las otras presentaciones son más baratas
+bandaCaritaV1(Banda):-
+    hace(Banda, PresentacionCareta),
+    forall(hace(_, Presentacion), masBarataV1(Presentacion, PresentacionCareta)).
+
+masBarataV1(EventoBarato, EventoCaro):-
+    costo(EventoBarato, CostoB),
+    costo(EventoCaro, CostoC),
+    CostoB =< CostoC. % para el forall de arriba el ">=" es necesario, porque entre todas las presentaciones puede aparecer la PresentacionCareta.
+
+%%%%%%%%%%%%%%%%%%%
+
+% Estrategia: La banda hace una presentación, y no existen presentaciones más caras.
+bandaCaritaV2(Banda):-
+    hace(Banda, PresentacionCareta),
+    not(masBarataV2(PresentacionCareta, _)).
+
+masBarataV2(EventoBarato, EventoCaro):-
+    hace(_,EventoCaro), % Para que el not funcione, masBarataV2 debe ser inversible por el segundo parámetro
+    costo(EventoBarato, CostoB),
+    costo(EventoCaro, CostoC),
+    CostoB < CostoC. % para el not de arriba el ">" estricto es necesario, porque entre todas las presentaciones del guión bajo "_" puede aparecer la PresentacionCareta, entonces siempre existiría una masBarata, y el not daría siempre falso.
+
+%%%%%%%%%%%%%%%%%%%%
+
+% Estrategia: La banda hace una presentación que tiene un costo, y todas las presentaciones tienen que tener un costo menor a ese.
+bandaCaritaV3(Banda):-
+    hace(Banda, PresentacionCareta),
+    costo(PresentacionCareta, CostoMasAlto),
+    forall(hace(_, Presentacion), (costo(Presentacion,Costo), CostoMasAlto >= Costo)).
+
